@@ -1,0 +1,17 @@
+{
+  "name": "rclone-index-vercel",
+  "version": "1.0.0",
+  "description": "Rclone index for Vercel deployment",
+  "main": "api/index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
+    "start": "vercel --prod"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
