@@ -76,11 +76,26 @@ async function setupConfig() {
       console.log('Config loaded from URL');
     } catch (error) {
       console.error('Failed to fetch config from URL:', error);
-      // Fallback to dummy config
-      fs.writeFileSync(configPath, '[combine]\ntype = alias\nremote = dummy');
+      // Fallback to dummy config with a working remote
+      fs.writeFileSync(configPath, `[dummy]
+type = memory
+
+[combine]
+type = combine
+upstreams = dummy=dummy:`);
+      console.log('Using fallback dummy config');
+      return configPath;
     }
   } else {
-    fs.writeFileSync(configPath, '[combine]\ntype = alias\nremote = dummy');
+    // Create a basic dummy config with memory backend
+    fs.writeFileSync(configPath, `[dummy]
+type = memory
+
+[combine]
+type = combine
+upstreams = dummy=dummy:`);
+    console.log('No config provided, using dummy config');
+    return configPath;
   }
   
   // Add combine remote if not exists
@@ -90,7 +105,19 @@ async function setupConfig() {
     if (remotes && remotes.length > 0) {
       const remoteNames = remotes.map(r => r.slice(1, -1));
       const upstreams = remoteNames.map(name => `${name}=${name}:`).join(' ');
-      fs.appendFileSync(configPath, `\n\n[combine]\ntype = combine\nupstreams = ${upstreams}`);
+      fs.appendFileSync(configPath, `\n\n[combine]
+type = combine
+upstreams = ${upstreams}`);
+      console.log('Added combine remote with upstreams:', upstreams);
+    } else {
+      // No remotes found, create dummy setup
+      fs.appendFileSync(configPath, `\n\n[dummy]
+type = memory
+
+[combine]
+type = combine
+upstreams = dummy=dummy:`);
+      console.log('No remotes found, added dummy setup');
     }
   }
   
