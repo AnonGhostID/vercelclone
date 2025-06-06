@@ -27,9 +27,24 @@ async function setupRclone() {
       if (!rcloneEntry) {
         throw new Error('rclone binary not found in archive');
       }
-      zip.extractEntryTo(rcloneEntry.entryName, '/tmp', false, true);
-      fs.renameSync(path.join('/tmp', rcloneEntry.entryName), rclonePath);
+      
+      // Extract the entire zip first
+      zip.extractAllTo('/tmp', true);
+      
+      // Find the actual extracted rclone binary path
+      const extractedPath = path.join('/tmp', rcloneEntry.entryName);
+      
+      // Move it to the expected location
+      fs.renameSync(extractedPath, rclonePath);
       fs.chmodSync(rclonePath, 0o755);
+      
+      // Clean up the zip file and extracted directory
+      fs.unlinkSync('/tmp/rclone.zip');
+      const extractedDir = path.dirname(extractedPath);
+      if (fs.existsSync(extractedDir) && extractedDir !== '/tmp') {
+        fs.rmSync(extractedDir, { recursive: true, force: true });
+      }
+      
       console.log('Rclone setup complete');
     } catch (error) {
       console.error('Failed to setup rclone:', error);
