@@ -56,7 +56,7 @@ async function setupRclone() {
 }
 
 // Setup rclone config
-function setupConfig() {
+async function setupConfig() {
   const configPath = '/tmp/rclone.conf';
   
   if (process.env.CONFIG_BASE64) {
@@ -64,9 +64,21 @@ function setupConfig() {
     fs.writeFileSync(configPath, configContent);
     console.log('Config loaded from base64');
   } else if (process.env.CONFIG_URL) {
-    // Note: In a real implementation, you'd fetch this asynchronously
-    console.log('Config URL method not implemented in this example');
-    fs.writeFileSync(configPath, '[combine]\ntype = alias\nremote = dummy');
+    try {
+      console.log('Fetching config from URL...');
+      const fetch = require('node-fetch');
+      const response = await fetch(process.env.CONFIG_URL);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch config: ${response.statusText}`);
+      }
+      const configContent = await response.text();
+      fs.writeFileSync(configPath, configContent);
+      console.log('Config loaded from URL');
+    } catch (error) {
+      console.error('Failed to fetch config from URL:', error);
+      // Fallback to dummy config
+      fs.writeFileSync(configPath, '[combine]\ntype = alias\nremote = dummy');
+    }
   } else {
     fs.writeFileSync(configPath, '[combine]\ntype = alias\nremote = dummy');
   }
@@ -206,7 +218,7 @@ module.exports = async (req, res) => {
     
     // Setup rclone
     const rclonePath = await setupRclone();
-    const configPath = setupConfig();
+    const configPath = await setupConfig();
     
     // Get the requested path
     const requestPath = req.url === '/' ? '' : req.url.slice(1);
