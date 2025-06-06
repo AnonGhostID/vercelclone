@@ -8,14 +8,28 @@ async function setupRclone() {
   
   if (!fs.existsSync(rclonePath)) {
     console.log('Downloading rclone...');
+    const fetch = require('node-fetch');
+    const AdmZip = require('adm-zip');
+
     
     // Download rclone binary
     const { execSync } = require('child_process');
     try {
-      execSync('curl -L https://downloads.rclone.org/rclone-current-linux-amd64.zip -o /tmp/rclone.zip', { stdio: 'inherit' });
-      execSync('cd /tmp && unzip -q rclone.zip', { stdio: 'inherit' });
-      execSync('cp /tmp/rclone-*-linux-amd64/rclone /tmp/rclone', { stdio: 'inherit' });
-      execSync('chmod +x /tmp/rclone', { stdio: 'inherit' });
+      const response = await fetch('https://downloads.rclone.org/rclone-current-linux-amd64.zip');
+      if (!response.ok) {
+        throw new Error(`Failed to download rclone: ${response.statusText}`);
+      }
+      const buffer = await response.buffer();
+      fs.writeFileSync('/tmp/rclone.zip', buffer);
+
+      const zip = new AdmZip('/tmp/rclone.zip');
+      const rcloneEntry = zip.getEntries().find(e => /\/rclone$/.test(e.entryName));
+      if (!rcloneEntry) {
+        throw new Error('rclone binary not found in archive');
+      }
+      zip.extractEntryTo(rcloneEntry.entryName, '/tmp', false, true);
+      fs.renameSync(path.join('/tmp', rcloneEntry.entryName), rclonePath);
+      fs.chmodSync(rclonePath, 0o755);
       console.log('Rclone setup complete');
     } catch (error) {
       console.error('Failed to setup rclone:', error);

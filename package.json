@@ -9,9 +9,10 @@
     "start": "vercel --prod"
   },
   "dependencies": {
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.6.7",
+    "adm-zip": "^0.5.10"
   },
   "engines": {
-    "node": "18.x"
+    "node": "20.x"
   }
 }
